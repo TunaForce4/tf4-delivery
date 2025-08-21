@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -38,6 +39,7 @@ public class DeliveryRouteLegResponseDto {
                 .actualDistanceKm(d.getActualDistanceKm())
                 .actualTimeMin(d.getActualTimeMin())
                 .status(d.getStatus())
+                .hubDeliveryAgentId(d.getHubDeliveryAgentId())
                 .createdAt(d.getCreatedAt())
                 .updatedAt(d.getUpdatedAt())
                 .build();
