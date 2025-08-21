@@ -1,13 +1,10 @@
 package com.tf4.delivery.dto.response;
 
 import com.tf4.delivery.entity.DeliveryRouteLeg;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -24,7 +21,7 @@ public class DeliveryRouteLegResponseDto {
     private Double actualDistanceKm;
     private Double actualTimeMin;
     private String status;
-    private BigInteger hubDeliveryAgentId;
+    private UUID hubDeliveryAgentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

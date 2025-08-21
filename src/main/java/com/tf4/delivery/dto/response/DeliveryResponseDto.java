@@ -1,13 +1,10 @@
 package com.tf4.delivery.dto.response;
 
 import com.tf4.delivery.entity.Delivery;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigInteger;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -20,9 +17,9 @@ public class DeliveryResponseDto {
     private UUID departureHubId;
     private UUID arrivalHubId;
     private String deliveryAddress;
-    private BigInteger receivedUserId;
+    private UUID receivedUserId;
     private String receivedSlackId;
-    private BigInteger companyDeliveryAgentId;
+    private UUID companyDeliveryAgentId;
     private UUID orderId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

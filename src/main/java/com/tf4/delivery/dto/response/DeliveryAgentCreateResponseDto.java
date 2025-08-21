@@ -3,10 +3,10 @@ package com.tf4.delivery.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.math.BigInteger;
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class DeliveryAgentCreateResponseDto {
-    private BigInteger userId;
+    private UUID userId;
 }

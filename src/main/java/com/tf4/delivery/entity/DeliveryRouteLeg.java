@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigInteger;
 import java.util.UUID;
 
 @Entity
@@ -46,12 +45,12 @@ public class DeliveryRouteLeg extends Timestamped{
     private String status;
 
     @Column(name = "hub_delivery_agent_id", nullable = false)
-    private BigInteger hubDeliveryAgentId;
+    private UUID hubDeliveryAgentId;
 
     @Builder
     public DeliveryRouteLeg(UUID routeLegId, UUID deliveryId, UUID departureHubId, UUID arrivalHubId,
                             Double estimatedDistanceKm, Double estimatedTimeMin, Double actualDistanceKm,
-                            Double actualTimeMin, String status, BigInteger hubDeliveryAgentId) {
+                            Double actualTimeMin, String status, UUID hubDeliveryAgentId) {
 
         this.routeLegId = routeLegId;
         this.deliveryId = deliveryId;

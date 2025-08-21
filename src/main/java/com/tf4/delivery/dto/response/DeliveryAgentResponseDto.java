@@ -1,7 +1,6 @@
 package com.tf4.delivery.dto.response;
 
 import com.tf4.delivery.entity.DeliveryAgent;
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,7 +13,7 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 public class DeliveryAgentResponseDto {
-    private BigInteger userId;
+    private UUID userId;
     private String deliveryType;
     private BigInteger deliverySeq;
     private UUID hubId;

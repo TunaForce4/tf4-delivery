@@ -65,7 +65,7 @@ public class DeliveryService {
 
         // 수령 업체 ID -> 수령인 주소, 도착 허브 id, 수령인 id
         CompanyFindInfoResponseDto receivedCompany = companyFeignClient.getCompanyInfo(requestDto.getReceiveCompanyId());
-        BigInteger userId = receivedCompany.getUserId();
+        UUID userId = receivedCompany.getUserId();
         String deliveryAddress = receivedCompany.getAddress();
         UUID arrivalHubId = receivedCompany.getHubId();
 

@@ -1,7 +1,10 @@
 package com.tf4.delivery.entity;
 
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +22,7 @@ public class DeliveryAgent extends Timestamped {
 
     @Id
     @Column(name = "user_id")
-    private BigInteger userId;
+    private UUID userId;
 
     @Column(name = "delivery_type", length = 50) // VARCHAR(50)
     private String deliveryType;
@@ -32,7 +35,7 @@ public class DeliveryAgent extends Timestamped {
 
 
     @Builder
-    public DeliveryAgent(BigInteger userId, String deliveryType, BigInteger deliverySeq, UUID hubId) {
+    public DeliveryAgent(UUID userId, String deliveryType, BigInteger deliverySeq, UUID hubId) {
         this.userId = userId;
         this.deliveryType = deliveryType;
         this.deliverySeq = deliverySeq;

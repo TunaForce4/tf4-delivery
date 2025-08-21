@@ -9,7 +9,6 @@ import com.tf4.delivery.repository.DeliveryAgentRepository;
 import com.tf4.delivery.spec.DeliveryAgentSpecifications;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.loadtime.Agent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +38,7 @@ public class DeliveryAgentService {
         return deliveryAgentRepository.findAll(spec, capped).map(DeliveryAgentResponseDto::from);
     }
 
-    public DeliveryAgentResponseDto getDeliveryAgent(BigInteger userId){
+    public DeliveryAgentResponseDto getDeliveryAgent(UUID userId){
         DeliveryAgent deliveryAgent = deliveryAgentRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("배송 담당자를 찾을 수 없습니다. "));
         return DeliveryAgentResponseDto.from(deliveryAgent);
@@ -81,7 +80,7 @@ public class DeliveryAgentService {
     }
 
     @Transactional
-    public DeliveryAgentResponseDto patchDeliveryAgent(BigInteger userId, DeliveryAgentPatchRequestDto requestDto) {
+    public DeliveryAgentResponseDto patchDeliveryAgent(UUID userId, DeliveryAgentPatchRequestDto requestDto) {
         DeliveryAgent deliveryAgent = deliveryAgentRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("배송 담당자를 찾을 수 없습니다."));
 
@@ -108,7 +107,7 @@ public class DeliveryAgentService {
     }
 
     @Transactional
-    public void deleteDeliveryAgent(BigInteger userId){
+    public void deleteDeliveryAgent(UUID userId){
         DeliveryAgent deliveryAgent = deliveryAgentRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("배송담당자를 찾을 수 없습니다. "));
 
