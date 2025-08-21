@@ -5,6 +5,10 @@ import com.tf4.delivery.dto.request.DeliveryPatchRequestDto;
 import com.tf4.delivery.dto.response.DeliveryCreateResponseDto;
 import com.tf4.delivery.dto.response.DeliveryResponseDto;
 import com.tf4.delivery.entity.Delivery;
+import com.tf4.delivery.repository.feign.auth.AuthFeignClient;
+import com.tf4.delivery.repository.feign.auth.response.AuthFindInfoResponseDto;
+import com.tf4.delivery.repository.feign.company.CompanyFeignClient;
+import com.tf4.delivery.repository.feign.company.response.CompanyFindInfoResponseDto;
 import com.tf4.delivery.repository.jpa.DeliveryRepository;
 import com.tf4.delivery.spec.DeliverySpecifications;
 import jakarta.ws.rs.NotFoundException;
@@ -16,6 +20,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 @Service
@@ -25,6 +30,8 @@ public class DeliveryService {
     private final DeliveryRepository deliveryRepository;
 //    private final HubClient hubClient;
 //    private final UserClient userClient;
+    private final CompanyFeignClient companyFeignClient;
+    private final AuthFeignClient authFeignClient;
 
     public Page<DeliveryResponseDto> searchDeliveries(String q, Pageable pageable){
 
@@ -39,39 +46,45 @@ public class DeliveryService {
         return deliveryRepository.findAll(spec, capped).map(DeliveryResponseDto::from);
     }
 
+    public DeliveryResponseDto getDelivery(UUID deliveryId){
+        Delivery delivery = deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> new NotFoundException(""));
+
+        return DeliveryResponseDto.from(delivery);
+    }
+
     @Transactional
     public DeliveryCreateResponseDto createDelivery(DeliveryCreateRequestDto requestDto){
 
         // [order쪽에서 받아 올 수 있는 것]
         // 주문 Id
-        // 공급 업체 ID
-        // 수령 업체 ID
 
+        // 공급 업체 ID -> 출발 허브 id,
+        CompanyFindInfoResponseDto supplyCompany = companyFeignClient.getCompanyInfo(requestDto.getSupplyCompanyId());
+        UUID departmentHubId = supplyCompany.getHubId();
+
+        // 수령 업체 ID -> 수령인 주소, 도착 허브 id, 수령인 id
+        CompanyFindInfoResponseDto receivedCompany = companyFeignClient.getCompanyInfo(requestDto.getReceiveCompanyId());
+        BigInteger userId = receivedCompany.getUserId();
+        String deliveryAddress = receivedCompany.getAddress();
+        UUID arrivalHubId = receivedCompany.getHubId();
+
+        // 수령인을 통해 얻을 수 있는 것 -> 수령인 slackId
+        AuthFindInfoResponseDto receivedUser = authFeignClient.getUserInfo(requestDto.getId());
+        String slackId = receivedUser.getSlackId();
+
+
+        // 업체 배송 담당자 = Null
         Delivery delivery = Delivery.builder()
-                .departureHubId(requestDto.getReceiveCompanyId())// 임시 값
-                .arrivalHubId(requestDto.getReceiveCompanyId())
-                .deliveryAddress("tmp")
-                .companyDeliveryAgentId(requestDto.getTmp())
-                .orderId(requestDto.getReceiveCompanyId())
-                .status("WAITING_AT_HUB")
-                .receivedSlackId(requestDto.getTmpString())
-                .receivedUserId(requestDto.getTmp())
+                .departureHubId(departmentHubId)
+                .arrivalHubId(arrivalHubId)
+                .deliveryAddress(deliveryAddress)
+                .orderId(requestDto.getId())
+                .status("WAITING_AT_HUB") // 고정
+                .receivedSlackId(slackId)
+                .receivedUserId(userId)
+                .companyDeliveryAgentId(null)
                 .build();
-
-        // 주문 ID 가져와서 할당
-
-        // 공급 업체 ID로 업체 테이블에서
-        // 허브 ID 가져와서 출발 허브 ID에 할당
-
-        // 수령 업체 ID 로 업체 테이블에서
-        // 사용자 ID 가져와서 업체 관리자(수령인)에 할당
-        // 수령 업체 주소 가져와서 업체 주소에 할당
-        // 허브 ID 가져와서 목적지 허브에 할당
-
-        // 수령인 ID를 통해서 수령인 Slack Id랑 전화번호 가져오기
-        // 강혁님한테 혹시 전화번호 왜 지우라고 한건지 다 여쭤보기 배송테이블에서
-
-        // 업체 배송 담당자 할당
 
         Delivery savedDelivery = deliveryRepository.save(delivery);
 
