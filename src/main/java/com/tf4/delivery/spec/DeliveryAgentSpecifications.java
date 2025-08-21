@@ -17,7 +17,11 @@ public class DeliveryAgentSpecifications {
     public static Specification<DeliveryAgent> searchAllFields(String q) {
         return (root, query, cb) -> {
             // q가 비어있으면 항상 true 반환
-            if (q == null || q.isBlank()) return cb.conjunction();
+            Predicate notDeleted = cb.isNull(root.get("deletedAt"));
+
+            if (q == null || q.isBlank()) {
+                return notDeleted; // 전체 조회도 삭제건 제외
+            }
 
             final String qTrim = q.trim();
             final String like = "%" + qTrim.toLowerCase() + "%";
@@ -51,7 +55,7 @@ public class DeliveryAgentSpecifications {
             //     return cb.disjunction(); // 결과 0건. 필요 시 400 에러로 바꿔도 됨.
             // }
 
-            return cb.or(orList.toArray(new Predicate[0]));
+            return cb.and(notDeleted, cb.or(orList.toArray(new Predicate[0])));
         };
     }
 
