@@ -9,6 +9,7 @@ import com.tf4.delivery.repository.DeliveryAgentRepository;
 import com.tf4.delivery.spec.DeliveryAgentSpecifications;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.loadtime.Agent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,14 +39,41 @@ public class DeliveryAgentService {
         return deliveryAgentRepository.findAll(spec, capped).map(DeliveryAgentResponseDto::from);
     }
 
+    public DeliveryAgentResponseDto getDeliveryAgent(BigInteger userId){
+        DeliveryAgent deliveryAgent = deliveryAgentRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("배송 담당자를 찾을 수 없습니다. "));
+        return DeliveryAgentResponseDto.from(deliveryAgent);
+    }
+
     @Transactional
     public DeliveryAgentCreateResponseDto createDeliveryAgent(DeliveryAgentCreateRequestDto requestDto){
         // 사용자 권한에 따라 다르게 해줘야함
+
+        // userId가 Deliver인 상태면 생성가능
+        // 타입이 허브면 삭제된거 빼고 젤큰 배송 순번 +1
+        // 타입이 업체면 소속 허브 Id중 젤큰 배송 순번 +1
+        String agentType = requestDto.getDeliveryType();
+        BigInteger deliverySeq = BigInteger.ZERO;
+        if(agentType.equals("HUB")){
+            DeliveryAgent deliveryAgent =
+                    deliveryAgentRepository.findFirstByDeliveryTypeAndDeletedAtIsNullOrderByDeliverySeqDesc("HUB")
+                    .orElseThrow(() -> new NotFoundException("배정가능한 배송 담당자가 없습니다."));
+
+            deliverySeq = deliveryAgent.getDeliverySeq();
+        } else if(agentType.equals("COMPANY")){
+            DeliveryAgent deliveryAgent =
+                    deliveryAgentRepository.findFirstByDeliveryTypeAndHubIdAndDeletedAtIsNullOrderByDeliverySeqDesc(
+                            "COMPANY",
+                            requestDto.getHubId())
+                    .orElseThrow(() -> new NotFoundException("배정가능한 배송 담당자가 없습니다."));
+            deliverySeq = deliveryAgent.getDeliverySeq();
+        }
+
         DeliveryAgent deliveryAgent = DeliveryAgent.builder()
                 .deliveryType(requestDto.getDeliveryType())
                 .hubId(requestDto.getHubId())
                 .userId(requestDto.getUserId())
-                .deliverySeq(BigInteger.ONE) // tmp 순서 지정해주는 함수 만들예정
+                .deliverySeq(deliverySeq.add(BigInteger.ONE))
                 .build();
 
         DeliveryAgent savedDeliveryAgent = deliveryAgentRepository.save(deliveryAgent);
