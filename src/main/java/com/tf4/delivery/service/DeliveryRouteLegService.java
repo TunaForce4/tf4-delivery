@@ -39,6 +39,15 @@ public class DeliveryRouteLegService {
         return deliveryRouteLegRepository.findAll(spec, capped).map(DeliveryRouteLegResponseDto::from);
     }
 
+    public DeliveryRouteLegResponseDto getDeliveryRouteLeg(UUID routeLegId){
+
+        DeliveryRouteLeg deliveryRouteLeg = deliveryRouteLegRepository.findById(routeLegId)
+                .orElseThrow(() -> new NotFoundException("배송 경로 기록을 찾을 수 없습니다."));
+
+        return DeliveryRouteLegResponseDto.from(deliveryRouteLeg);
+    }
+
+
     @Transactional
     public DeliveryRouteLegCreateResponseDto createDeliveryRouteLeg(DeliveryRouteLegCreateRequestDto requestDto){
 
