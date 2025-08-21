@@ -18,7 +18,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/deliveryAgents")
@@ -28,9 +27,8 @@ public class DeliveryAgentController {
     private final DeliveryAgentService deliveryAgentService;
 
     // 배송 담당자 목록 조회 및 검색
-
     @GetMapping
-    public ResponseEntity<PageResponse<DeliveryAgentResponseDto>> getDeliveries(
+    public ResponseEntity<PageResponse<DeliveryAgentResponseDto>> getDeliveryAgent(
             @PageableDefault(page = 0, size = 10, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(value = "q", required = false) String q
     ){
@@ -38,9 +36,15 @@ public class DeliveryAgentController {
         return ResponseEntity.ok(PageResponse.of(page));
     }
 
+    // 배송 담당자 단 건 조회
+    @GetMapping("/{deliveryAgentId}")
+    public ResponseEntity<DeliveryAgentResponseDto> getDeliveryAgent (@PathVariable BigInteger deliveryAgentId){
+        return new ResponseEntity<>(deliveryAgentService.getDeliveryAgent(deliveryAgentId), HttpStatus.OK);
+    }
+
     // 배송 담당자 생성
     @PostMapping
-    public ResponseEntity<DeliveryAgentCreateResponseDto> createDelivery(
+    public ResponseEntity<DeliveryAgentCreateResponseDto> createDeliveryAgent(
             @Validated
             @RequestBody DeliveryAgentCreateRequestDto requestDto){
         return new ResponseEntity<>(deliveryAgentService.createDeliveryAgent(requestDto), HttpStatus.CREATED);
@@ -49,17 +53,16 @@ public class DeliveryAgentController {
     // 배송 담당자 수정
     @PatchMapping("/{deliveryAgentId}")
     public ResponseEntity<DeliveryAgentResponseDto> patchDeliveryAgent (
-            @PathVariable BigInteger userId,
+            @PathVariable BigInteger deliveryAgentId,
             @Validated
             @RequestBody DeliveryAgentPatchRequestDto requestDto){
-        return new ResponseEntity<>(deliveryAgentService.patchDeliveryAgent(userId, requestDto), HttpStatus.OK);
+        return new ResponseEntity<>(deliveryAgentService.patchDeliveryAgent(deliveryAgentId, requestDto), HttpStatus.OK);
     }
     // 배송 삭제
     @DeleteMapping("/{deliveryAgentId}")
-    public ResponseEntity<Void> deleteDeliveryAgent(@PathVariable BigInteger userId){
-        deliveryAgentService.deleteDeliveryAgent(userId);
+    public ResponseEntity<Void> deleteDeliveryAgent(@PathVariable BigInteger deliveryAgentId){
+        deliveryAgentService.deleteDeliveryAgent(deliveryAgentId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
 
 }
