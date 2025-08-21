@@ -35,6 +35,12 @@ public class DeliveryRouteLegController {
         return ResponseEntity.ok(PageResponse.of(page));
     }
 
+    // 허브간 배송 경로 단건 조회
+    @GetMapping("/{routeLegId}")
+    public ResponseEntity<DeliveryRouteLegResponseDto> getDeliveryRouteLeg (@PathVariable UUID routeLegId){
+        return new ResponseEntity<>(deliveryRouteLegService.getDeliveryRouteLeg(routeLegId), HttpStatus.OK);
+    }
+
     // 허브간 배송 경로 생성
     @PostMapping
     public ResponseEntity<DeliveryRouteLegCreateResponseDto> createDeliveryRouteLeg(
