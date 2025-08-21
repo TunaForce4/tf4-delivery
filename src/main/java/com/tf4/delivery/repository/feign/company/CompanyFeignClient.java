@@ -11,16 +11,11 @@ import java.util.UUID;
 @FeignClient(
         name = "companies",
         url = "localhost:3360",
-        path = "/internal/companies/order-company",
+        path = "/internal/companies/delivery-company",
         fallbackFactory = CompanyFeignFallbackFactory.class)
 public interface CompanyFeignClient {
 
-    @GetMapping("/find-by-user-id/{userId}")
-    CompanyFindInfoResponseDto findCompanyInfoByUserId(@PathVariable("userId") UUID userId);
 
-    @GetMapping("/find-by-company-id/{companyId}")
-    CompanyFindInfoResponseDto findCompanyInfoByCompanyId(@PathVariable("companyId") UUID companyId);
-
-    @GetMapping("/find-by-hub-id/{hubId}")
-    CompanyFindInfoListResponseDto findCompanyInfoByHubId(@PathVariable("hubId") UUID hubId);
+    @GetMapping("/{companyId}")
+    CompanyFindInfoResponseDto getCompanyInfo(@PathVariable("companyId") UUID companyId);
 }
