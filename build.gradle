@@ -69,7 +69,7 @@ dependencyManagement {
 }
 
 springBoot {
-	mainClass = 'com.tunaforce.message.MessageApplication'
+	mainClass = 'com.tf4.delivery.DeliveryApplication'
 }
 
 tasks.named('test') {
