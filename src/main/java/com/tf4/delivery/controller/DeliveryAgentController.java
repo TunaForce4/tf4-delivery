@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigInteger;
 
 @RestController
-@RequestMapping("/deliveryAgents")
+@RequestMapping("/delivery-agents")
 @RequiredArgsConstructor
 public class DeliveryAgentController {
 
