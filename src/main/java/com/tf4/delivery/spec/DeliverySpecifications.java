@@ -16,8 +16,13 @@ public class DeliverySpecifications {
 
     public static Specification<Delivery> searchAllFields(String q) {
         return (root, query, cb) -> {
-            // q가 비어있으면 항상 true 반환
-            if (q == null || q.isBlank()) return cb.conjunction();
+            // 항상 not-deleted 먼저
+            Predicate notDeleted = cb.isNull(root.get("deletedAt"));
+
+            if (q == null || q.isBlank()) {
+                return notDeleted; // 전체 조회도 삭제건 제외
+            }
+
 
             final String qTrim = q.trim();
             final String like = "%" + qTrim.toLowerCase() + "%";
@@ -25,7 +30,6 @@ public class DeliverySpecifications {
             List<Predicate> orList = new ArrayList<>();
 
             // 1) 문자열 컬럼 부분일치 (대소문자 무시)
-            // 컬럼명은 엔티티 필드명과 일치시켜 주세요.
             orList.add(cb.like(cb.lower(root.get("status")), like));
             orList.add(cb.like(cb.lower(root.get("deliveryAddress")), like));
             orList.add(cb.like(cb.lower(root.get("receivedSlackId")), like));
@@ -48,6 +52,31 @@ public class DeliverySpecifications {
             // if (!qNum.isEmpty()) {
             //     orList.add(cb.like(cb.lower(phoneNorm), "%" + qNum.toLowerCase() + "%"));
             // }
+
+            // 3) 날짜(yyyy-MM-dd) → 하루 범위 검색
+            tryParseLocalDate(qTrim).ifPresent(d -> {
+                var start = d.atStartOfDay();
+                var endExclusive = d.plusDays(1).atStartOfDay();
+
+                // createdAt
+                orList.add(cb.and(
+                        cb.greaterThanOrEqualTo(root.get("createdAt"), start),
+                        cb.lessThan(root.get("createdAt"), endExclusive)
+                ));
+                // updatedAt
+                orList.add(cb.and(
+                        cb.greaterThanOrEqualTo(root.get("updatedAt"), start),
+                        cb.lessThan(root.get("updatedAt"), endExclusive)
+                ));
+            });
+
+            // (선택) 날짜시간(yyyy-MM-ddTHH:mm) 정확 매치 근사
+            tryParseLocalDateTime(qTrim).ifPresent(dt -> {
+                var start = dt.minusSeconds(1);
+                var end = dt.plusSeconds(1);
+                orList.add(cb.between(root.get("createdAt"), start, end));
+                orList.add(cb.between(root.get("updatedAt"), start, end));
+            });
 
             // 4) UUID 정확 매치(인덱스 활용)
             tryParseUuid(qTrim).ifPresent(uuid -> {
@@ -72,12 +101,21 @@ public class DeliverySpecifications {
             //     return cb.disjunction(); // 결과 0건. 필요 시 400 에러로 바꿔도 됨.
             // }
 
-            return cb.or(orList.toArray(new Predicate[0]));
+            return cb.and(notDeleted, cb.or(orList.toArray(new Predicate[0])));
         };
     }
 
     private static Optional<UUID> tryParseUuid(String s) {
         try { return Optional.of(UUID.fromString(s)); }
+        catch (Exception e) { return Optional.empty(); }
+    }
+
+    private static Optional<java.time.LocalDate> tryParseLocalDate(String s) {
+        try { return Optional.of(java.time.LocalDate.parse(s)); }
+        catch (Exception e) { return Optional.empty(); }
+    }
+    private static Optional<java.time.LocalDateTime> tryParseLocalDateTime(String s) {
+        try { return Optional.of(java.time.LocalDateTime.parse(s)); } // expects 'yyyy-MM-ddTHH:mm[:ss]'
         catch (Exception e) { return Optional.empty(); }
     }
 }
