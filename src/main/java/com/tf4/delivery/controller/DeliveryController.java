@@ -35,6 +35,12 @@ public class DeliveryController {
         return ResponseEntity.ok(PageResponse.of(page));
     }
 
+    // 배송 단건 조회
+    @GetMapping("/{deliveryId}")
+    public ResponseEntity<DeliveryResponseDto> getDeliveryRouteLeg (@PathVariable UUID deliveryId){
+        return new ResponseEntity<>(deliveryService.getDelivery(deliveryId), HttpStatus.OK);
+    }
+
     // 배송 생성(주문시 자동 생성)
     @PostMapping
     public ResponseEntity<DeliveryCreateResponseDto> createDelivery(
