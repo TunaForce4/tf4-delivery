@@ -14,4 +14,6 @@ public class JpaConfig {
     public AuditorAware<UUID> auditorProvider() {
         return new AuditAwareImpl();
     }
+
 }
+

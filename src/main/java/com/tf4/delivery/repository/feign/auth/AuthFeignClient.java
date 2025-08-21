@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.UUID;
 
 @FeignClient(
-        name = "Auths",
-        url = "localhost:3360",
-        path = "/iternal/users")
+        name = "auth-service",
+        url = "localhost:3350",
+        path = "/internal/auth/delivery-auth")
 public interface AuthFeignClient {
 
     @GetMapping("/{userId}")
