@@ -39,7 +39,7 @@ public class Delivery extends Timestamped {
     @Column(name = "received_slack_id", length = 200)
     private String receivedSlackId;
 
-    @Column(name = "company_delivery_agent_id", nullable = false)
+    @Column(name = "company_delivery_agent_id")
     private BigInteger companyDeliveryAgentId;
 
     @Column(name = "order_id", nullable = false)
