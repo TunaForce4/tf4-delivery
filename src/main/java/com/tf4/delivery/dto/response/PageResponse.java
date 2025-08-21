@@ -22,11 +22,11 @@ public class PageResponse<T> {
                 .findFirst()
                 .orElse("createdAt,desc");
         /*
-         * order.getProperty() → 어떤 컬럼으로 정렬했는지 (예: "createdAt")
-         * order.getDirection().name().toLowerCase() → 정렬 방향 (예: "desc")
-         * 합쳐서 "createdAt,desc" 같은 문자열을 생성.
-         * 만약 정렬 조건이 비어있다면 기본 "createdAt,desc"로 대체.
-         * */
+        * order.getProperty() → 어떤 컬럼으로 정렬했는지 (예: "createdAt")
+        * order.getDirection().name().toLowerCase() → 정렬 방향 (예: "desc")
+        * 합쳐서 "createdAt,desc" 같은 문자열을 생성.
+        * 만약 정렬 조건이 비어있다면 기본 "createdAt,desc"로 대체.
+        * */
 
         return new PageResponse<>(
                 page.getContent(),
