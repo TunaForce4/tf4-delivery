@@ -6,7 +6,7 @@ import java.util.UUID;
 
 @Getter
 public class DeliveryCreateRequestDto {
-    private UUID id;
+    private UUID orderId;
     private UUID supplyCompanyId;
     private UUID receiveCompanyId;
 }
