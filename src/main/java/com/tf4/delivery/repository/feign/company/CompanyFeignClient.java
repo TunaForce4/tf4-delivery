@@ -10,11 +10,11 @@ import java.util.UUID;
 @FeignClient(
         name = "companies",
         url = "localhost:3360",
-        path = "/internal/companies/delivery-company",
+        path = "/companies",
         fallbackFactory = CompanyFeignFallbackFactory.class)
 public interface CompanyFeignClient {
 
-
     @GetMapping("/{companyId}")
-    CompanyFindInfoResponseDto getCompanyInfo(@PathVariable("companyId") UUID companyId);
+    CompanyFindInfoResponseDto findCompanyInfoByCompanyId(@PathVariable("companyId") UUID companyId);
+
 }
