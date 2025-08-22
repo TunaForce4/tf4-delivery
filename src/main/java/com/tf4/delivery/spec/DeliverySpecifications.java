@@ -5,6 +5,8 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -101,7 +103,29 @@ public class DeliverySpecifications {
             //     return cb.disjunction(); // 결과 0건. 필요 시 400 에러로 바꿔도 됨.
             // }
 
-            return cb.and(notDeleted, cb.or(orList.toArray(new Predicate[0])));
+            //return cb.and(notDeleted, cb.or(orList.toArray(new Predicate[0])));
+            return notDeleted;
+        };
+    }
+
+    public static Specification<Delivery> filter(String status, LocalDate date) {
+        return (root, query, cb) -> {
+            List<Predicate> ands = new ArrayList<>();
+            ands.add(cb.isNull(root.get("deletedAt"))); // not-deleted
+
+            if (status != null && !status.isBlank()) {
+                ands.add(cb.equal(cb.lower(root.get("status")), status.toLowerCase()));
+                // enum이면: ands.add(cb.equal(root.get("status"), DeliveryStatus.valueOf(status)));
+            }
+
+            if (date != null) {
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime endEx = date.plusDays(1).atStartOfDay();
+                ands.add(cb.greaterThanOrEqualTo(root.get("createdAt"), start));
+                ands.add(cb.lessThan(root.get("createdAt"), endEx));
+            }
+
+            return cb.and(ands.toArray(new Predicate[0]));
         };
     }
 
