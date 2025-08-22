@@ -1,10 +1,12 @@
 package com.tf4.delivery.dto.request;
 
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.UUID;
 
 @Getter
+@Builder
 public class DeliveryPatchRequestDto {
     private String status;
     private UUID departureHubId;
