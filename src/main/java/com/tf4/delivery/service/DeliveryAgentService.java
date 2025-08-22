@@ -5,7 +5,7 @@ import com.tf4.delivery.dto.request.DeliveryAgentPatchRequestDto;
 import com.tf4.delivery.dto.response.DeliveryAgentCreateResponseDto;
 import com.tf4.delivery.dto.response.DeliveryAgentResponseDto;
 import com.tf4.delivery.entity.DeliveryAgent;
-import com.tf4.delivery.repository.DeliveryAgentRepository;
+import com.tf4.delivery.repository.jpa.DeliveryAgentRepository;
 import com.tf4.delivery.spec.DeliveryAgentSpecifications;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
