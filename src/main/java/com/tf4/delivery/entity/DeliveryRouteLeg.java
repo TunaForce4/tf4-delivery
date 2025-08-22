@@ -33,13 +33,13 @@ public class DeliveryRouteLeg extends Timestamped{
     private Double estimatedDistanceKm;
 
     @Column(name = "estimated_time_min", nullable = false)
-    private Double estimatedTimeMin;
+    private Long estimatedTimeMin;
 
     @Column(name = "actual_distance_km")
     private Double actualDistanceKm;
 
     @Column(name = "actual_time_min")
-    private Double actualTimeMin;
+    private Long actualTimeMin;
 
     @Column(name = "status", nullable = false, length = 100) // VARCHAR(100)
     private String status;
@@ -49,8 +49,8 @@ public class DeliveryRouteLeg extends Timestamped{
 
     @Builder
     public DeliveryRouteLeg(UUID routeLegId, UUID deliveryId, UUID departureHubId, UUID arrivalHubId,
-                            Double estimatedDistanceKm, Double estimatedTimeMin, Double actualDistanceKm,
-                            Double actualTimeMin, String status, UUID hubDeliveryAgentId) {
+                            Double estimatedDistanceKm, Long estimatedTimeMin, Double actualDistanceKm,
+                            Long actualTimeMin, String status, UUID hubDeliveryAgentId) {
 
         this.routeLegId = routeLegId;
         this.deliveryId = deliveryId;

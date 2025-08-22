@@ -11,9 +11,9 @@ public class DeliveryRouteLegPatchRequestDto {
     private UUID departureHubId;
     private UUID arrivalHubId;
     private Double estimatedDistanceKm;
-    private Double estimatedTimeMin;
+    private Long estimatedTimeMin;
     private Double actualDistanceKm;
-    private Double actualTimeMin;
+    private Long actualTimeMin;
     private String status;
     private UUID hubDeliveryAgentId;
 }
