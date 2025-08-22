@@ -7,8 +7,10 @@ import java.util.UUID;
 @Getter
 public class CompanyFindInfoResponseDto {
     private UUID companyId;
-    private UUID hubId;
     private String companyName;
-    private UUID userId;
+    private String companyType;
     private String address;
+    private UUID hubId;
+    private String hubName;
+    private UUID userId;
 }
