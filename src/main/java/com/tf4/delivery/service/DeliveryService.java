@@ -2,6 +2,7 @@ package com.tf4.delivery.service;
 
 import com.tf4.delivery.dto.request.DeliveryCreateRequestDto;
 import com.tf4.delivery.dto.request.DeliveryPatchRequestDto;
+import com.tf4.delivery.dto.request.DeliveryRouteLegCreateRequestDto;
 import com.tf4.delivery.dto.response.DeliveryCreateResponseDto;
 import com.tf4.delivery.dto.response.DeliveryResponseDto;
 import com.tf4.delivery.entity.Delivery;
@@ -20,6 +21,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -31,19 +35,25 @@ public class DeliveryService {
 //    private final UserClient userClient;
     private final CompanyFeignClient companyFeignClient;
     private final AuthFeignClient authFeignClient;
+    private final DeliveryRouteLegService deliveryRouteLegService;
 
-    public Page<DeliveryResponseDto> searchDeliveries(String q, Pageable pageable){
+    public Page<DeliveryResponseDto> searchDeliveries(
+            String q, String status, LocalDate date, Pageable pageable
+    ) {
+        List<Specification<Delivery>> specs = new ArrayList<>();
 
-        Pageable capped = PageRequest.of(
-                pageable.getPageNumber(),
-                Math.min(pageable.getPageSize(), 100),
-                pageable.getSort()
-        );
+        if (q != null && !q.isBlank()) {
+            specs.add(DeliverySpecifications.searchAllFields(q));
+        }
+        // filter(status, date)는 내부에서 notDeleted + createdAt 날짜 + status를 AND로 묶음
+        specs.add(DeliverySpecifications.filter(status, date));
 
-        Specification<Delivery> spec = DeliverySpecifications.searchAllFields(q);
+        Specification<Delivery> spec = Specification.allOf(specs);
 
-        return deliveryRepository.findAll(spec, capped).map(DeliveryResponseDto::from);
+        Page<Delivery> page = deliveryRepository.findAll(spec, pageable);
+        return page.map(DeliveryResponseDto::from);
     }
+
 
     public DeliveryResponseDto getDelivery(UUID deliveryId){
         Delivery delivery = deliveryRepository.findById(deliveryId)
@@ -54,9 +64,6 @@ public class DeliveryService {
 
     @Transactional
     public DeliveryCreateResponseDto createDelivery(DeliveryCreateRequestDto requestDto){
-
-        // [order쪽에서 받아 올 수 있는 것]
-        // 주문 Id
 
         // 공급 업체 ID -> 출발 허브 id,
         CompanyFindInfoResponseDto supplyCompany = companyFeignClient.findCompanyInfoByCompanyId(requestDto.getSupplyCompanyId());
@@ -73,7 +80,6 @@ public class DeliveryService {
         AuthFindInfoResponseDto receivedUser = authFeignClient.getUserInfo(userId);
         String slackId = receivedUser.getSlackId();
 
-
         // 업체 배송 담당자 = Null
         Delivery delivery = Delivery.builder()
                 .departureHubId(departmentHubId)
@@ -87,6 +93,14 @@ public class DeliveryService {
                 .build();
 
         Delivery savedDelivery = deliveryRepository.save(delivery);
+
+        DeliveryRouteLegCreateRequestDto legDto = DeliveryRouteLegCreateRequestDto.builder()
+                .deliveryId(savedDelivery.getDeliveryId())
+                .departureHubId(savedDelivery.getDepartureHubId())
+                .arrivalHubId(savedDelivery.getArrivalHubId())
+                .build();
+
+        deliveryRouteLegService.createDeliveryRouteLeg(legDto);
 
         return new DeliveryCreateResponseDto(savedDelivery.getDeliveryId());
     }
