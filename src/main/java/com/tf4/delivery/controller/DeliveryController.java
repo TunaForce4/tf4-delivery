@@ -11,11 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
@@ -28,10 +30,14 @@ public class DeliveryController {
     // 배송 목록 조회 및 검색
     @GetMapping
     public ResponseEntity<PageResponse<DeliveryResponseDto>> getDeliveries(
-            @PageableDefault(page = 0, size = 10, sort = "updatedAt", direction = Sort.Direction.DESC)Pageable pageable,
-            @RequestParam(value = "q", required = false) String q
+            @PageableDefault(page = 0, size = 10, sort = "updatedAt", direction = Sort.Direction.DESC)
+                    Pageable pageable,
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date // yyyy-MM-dd
     ){
-        Page<DeliveryResponseDto> page = deliveryService.searchDeliveries(q, pageable);
+        Page<DeliveryResponseDto> page = deliveryService.searchDeliveries(q, status, date, pageable);
         return ResponseEntity.ok(PageResponse.of(page));
     }
 
