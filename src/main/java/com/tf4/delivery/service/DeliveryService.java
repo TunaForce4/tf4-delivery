@@ -20,7 +20,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigInteger;
 import java.util.UUID;
 
 @Service
@@ -60,17 +59,18 @@ public class DeliveryService {
         // 주문 Id
 
         // 공급 업체 ID -> 출발 허브 id,
-        CompanyFindInfoResponseDto supplyCompany = companyFeignClient.getCompanyInfo(requestDto.getSupplyCompanyId());
+        CompanyFindInfoResponseDto supplyCompany = companyFeignClient.findCompanyInfoByCompanyId(requestDto.getSupplyCompanyId());
         UUID departmentHubId = supplyCompany.getHubId();
 
         // 수령 업체 ID -> 수령인 주소, 도착 허브 id, 수령인 id
-        CompanyFindInfoResponseDto receivedCompany = companyFeignClient.getCompanyInfo(requestDto.getReceiveCompanyId());
-        UUID userId = receivedCompany.getUserId();
+        CompanyFindInfoResponseDto receivedCompany = companyFeignClient.findCompanyInfoByCompanyId(requestDto.getReceiveCompanyId());
+        UUID userId = receivedCompany.getUserId();System.out.println("userId 수령인  "+ userId);
+
         String deliveryAddress = receivedCompany.getAddress();
-        UUID arrivalHubId = receivedCompany.getHubId();
+        UUID arrivalHubId = receivedCompany.getHubId();System.out.println("여기까지 되는걸로");
 
         // 수령인을 통해 얻을 수 있는 것 -> 수령인 slackId
-        AuthFindInfoResponseDto receivedUser = authFeignClient.getUserInfo(requestDto.getId());
+        AuthFindInfoResponseDto receivedUser = authFeignClient.getUserInfo(userId);
         String slackId = receivedUser.getSlackId();
 
 
@@ -79,7 +79,7 @@ public class DeliveryService {
                 .departureHubId(departmentHubId)
                 .arrivalHubId(arrivalHubId)
                 .deliveryAddress(deliveryAddress)
-                .orderId(requestDto.getId())
+                .orderId(requestDto.getOrderId())
                 .status("WAITING_AT_HUB") // 고정
                 .receivedSlackId(slackId)
                 .receivedUserId(userId)
