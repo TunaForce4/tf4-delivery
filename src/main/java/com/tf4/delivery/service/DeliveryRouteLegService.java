@@ -1,11 +1,21 @@
 package com.tf4.delivery.service;
 
+import com.tf4.delivery.dto.request.DeliveryPatchRequestDto;
 import com.tf4.delivery.dto.request.DeliveryRouteLegCreateRequestDto;
 import com.tf4.delivery.dto.request.DeliveryRouteLegPatchRequestDto;
+import com.tf4.delivery.dto.response.DeliveryResponseDto;
 import com.tf4.delivery.dto.response.DeliveryRouteLegCreateResponseDto;
 import com.tf4.delivery.dto.response.DeliveryRouteLegResponseDto;
+import com.tf4.delivery.entity.Delivery;
+import com.tf4.delivery.entity.DeliveryAgent;
 import com.tf4.delivery.entity.DeliveryRouteLeg;
+import com.tf4.delivery.entity.LogisticsManage;
+import com.tf4.delivery.repository.feign.hub.HubFeignClient;
+import com.tf4.delivery.repository.feign.hub.response.HubFindInfoResponseDto;
+import com.tf4.delivery.repository.jpa.DeliveryAgentRepository;
+import com.tf4.delivery.repository.jpa.DeliveryRepository;
 import com.tf4.delivery.repository.jpa.DeliveryRouteLegRepository;
+import com.tf4.delivery.repository.jpa.LogisticsManageRepository;
 import com.tf4.delivery.spec.DeliveryRouteLegSpecifications;
 import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +26,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 @Service
@@ -23,8 +34,12 @@ import java.util.UUID;
 public class DeliveryRouteLegService {
 
     private final DeliveryRouteLegRepository deliveryRouteLegRepository;
+    private final LogisticsManageRepository logisticsManageRepository;
+    private final DeliveryAgentRepository deliveryAgentRepository;
 //    private final HubClient hubClient;
 //    private final UserClient userClient;
+    private final HubFeignClient hubFeignClient;
+    private final DeliveryRepository deliveryRepository;
 
     public Page<DeliveryRouteLegResponseDto> searchDeliveryRouteLeg(String q, Pageable pageable){
 
@@ -47,41 +62,67 @@ public class DeliveryRouteLegService {
         return DeliveryRouteLegResponseDto.from(deliveryRouteLeg);
     }
 
-
     @Transactional
     public DeliveryRouteLegCreateResponseDto createDeliveryRouteLeg(DeliveryRouteLegCreateRequestDto requestDto){
 
-        // 허브한테 출발허브 - 도착허브 => 예상 거리, 예상 소요시간  달라 해야함
+        UUID arrivalHubId = requestDto.getArrivalHubId();
+        UUID departureHubId = requestDto.getDepartureHubId();
+
+        HubFindInfoResponseDto hub = hubFeignClient.findHubIDByHubId(arrivalHubId, departureHubId);
+        Long estimatedTimeMin = hub.getTransitTime();
+        Double estimatedDistanceKm = hub.getDistance();
+
+        UUID hubDeliveryAgentId = pickNextHubAgentByPointer();
+
+
+        Delivery parent = deliveryRepository.findById(requestDto.getDeliveryId())
+                .orElseThrow(() -> new NotFoundException("배송을 찾을 수 없습니다."));
+        parent.setStatus("HUB_TO_HUB_IN_TRANSIT");
+
 
         DeliveryRouteLeg deliveryRouteLeg = DeliveryRouteLeg.builder()
+                .deliveryId(requestDto.getDeliveryId())
                 .departureHubId(requestDto.getDepartureHubId())
                 .arrivalHubId(requestDto.getArrivalHubId())
-                .estimatedDistanceKm(requestDto.getEstimatedDistanceKm())
-                .estimatedTimeMin(requestDto.getEstimatedTimeMin())
-                .actualDistanceKm(requestDto.getActualDistanceKm())
-                .actualTimeMin(requestDto.getActualTimeMin())
-                .status("WAITING_AT_HUB")
-                .hubDeliveryAgentId(requestDto.getHubDeliveryAgentId())
+                .estimatedDistanceKm(estimatedDistanceKm)
+                .estimatedTimeMin(estimatedTimeMin)
+                .actualDistanceKm(null)
+                .actualTimeMin(null)
+                .status("HUB_TO_HUB_IN_TRANSIT")
+                .hubDeliveryAgentId(hubDeliveryAgentId)
                 .build();
-
-        // 주문 ID 가져와서 할당
-
-        // 공급 업체 ID로 업체 테이블에서
-        // 허브 ID 가져와서 출발 허브 ID에 할당
-
-        // 수령 업체 ID 로 업체 테이블에서
-        // 사용자 ID 가져와서 업체 관리자(수령인)에 할당
-        // 수령 업체 주소 가져와서 업체 주소에 할당
-        // 허브 ID 가져와서 목적지 허브에 할당
-
-        // 수령인 ID를 통해서 수령인 Slack Id랑 전화번호 가져오기
-        // 강혁님한테 혹시 전화번호 왜 지우라고 한건지 다 여쭤보기 배송테이블에서
-
-        // 업체 배송 담당자 할당
 
         DeliveryRouteLeg savedDelivery = deliveryRouteLegRepository.save(deliveryRouteLeg);
 
         return new DeliveryRouteLegCreateResponseDto(savedDelivery.getDeliveryId());
+    }
+
+    @Transactional
+    public UUID pickNextHubAgentByPointer() {
+        // 전역 1행 잠금 & 초기화
+        if (logisticsManageRepository.count()==0) {
+            LogisticsManage lm = logisticsManageRepository.save(
+                    LogisticsManage.builder()
+                            .id(1L)  // 전역 1행 전략 =>  상수 P
+                            .currentAgentSeq(BigInteger.ZERO)
+                            .build());
+        }
+
+        LogisticsManage lm = logisticsManageRepository.findById(1L).orElseThrow(() -> new NotFoundException(""));
+
+        BigInteger cur = lm.getCurrentAgentSeq() == null ? BigInteger.ZERO : lm.getCurrentAgentSeq();
+        // 1) seq > cur 중 최솟값
+        DeliveryAgent agent = deliveryAgentRepository
+                .findFirstByDeliveryTypeAndDeletedAtIsNullAndDeliverySeqGreaterThanOrderByDeliverySeqAsc(
+                        "HUB", cur)
+                // 2) 없으면 wrap: 전체 중 최솟값
+                .orElseGet(() -> deliveryAgentRepository
+                        .findFirstByDeliveryTypeAndDeletedAtIsNullOrderByDeliverySeqAsc("HUB")
+                        .orElseThrow(() -> new IllegalStateException("가용 HUB 담당자 없음")));
+        // 포인터를 선택된 담당자의 seq로 이동
+        lm.setCurrentAgentSeq(agent.getDeliverySeq());
+        logisticsManageRepository.save(lm);
+        return agent.getUserId(); // 이 ID를 허브 배송담당자 ID로 사용
     }
 
     @Transactional
@@ -92,6 +133,11 @@ public class DeliveryRouteLegService {
 
         if (requestDto.getStatus() != null) {
             deliveryRouteLeg.setStatus(requestDto.getStatus());
+
+            Delivery parent = deliveryRepository.findById(deliveryRouteLeg.getDeliveryId())
+                    .orElseThrow(() -> new NotFoundException("배송을 찾을 수 없습니다."));
+            parent.setStatus(requestDto.getStatus());
+
         }
 
         // 출발/도착 허브
